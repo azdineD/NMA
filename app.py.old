@@ -1,0 +1,102 @@
+from flask import Flask, request, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+
+# Configuration de la base PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://nma_user:nmapassword@localhost/nma_transport'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Modèles de base de données
+class Vehicule(db.Model):
+    __tablename__ = 'vehicules'
+    id = db.Column(db.Integer, primary_key=True)
+    immatriculation = db.Column(db.String(20), unique=True, nullable=False)
+    modele = db.Column(db.String(50), nullable=False)
+
+class Conducteur(db.Model):
+    __tablename__ = 'conducteurs'
+    id = db.Column(db.Integer, primary_key=True)
+    nom = db.Column(db.String(100), nullable=False)
+    numero_permis = db.Column(db.String(20), unique=True, nullable=False)
+
+class Trajet(db.Model):
+    __tablename__ = 'trajets'
+    id = db.Column(db.Integer, primary_key=True)
+    point_depart = db.Column(db.String(100), nullable=False)
+    destination = db.Column(db.String(100), nullable=False)
+    date_trajet = db.Column(db.Date, nullable=False)
+    conducteur_id = db.Column(db.Integer, db.ForeignKey('conducteurs.id'), nullable=False)  # Correction ici
+    vehicule_id = db.Column(db.Integer, db.ForeignKey('vehicules.id'), nullable=False)  # Correction ici
+
+# Routes API
+
+@app.route('/')
+def home():
+    return render_template('index.html')  # Charge la page HTML depuis templates/
+
+# 1️⃣ Récupérer tous les trajets
+@app.route('/trajets', methods=['GET'])
+def get_trajets():
+    trajets = Trajet.query.all()
+    return jsonify([
+        {"id": t.id, "point_depart": t.point_depart, "destination": t.destination, "date_trajet": str(t.date_trajet)}
+        for t in trajets
+    ])
+
+# 2️⃣ Ajouter un trajet
+@app.route('/trajets', methods=['POST'])
+def add_trajet():
+    data = request.get_json()
+    nouveau_trajet = Trajet(
+        point_depart=data['point_depart'],
+        destination=data['destination'],
+        date_trajet=data['date_trajet'],
+        conducteur_id=data['conducteur_id'],
+        vehicule_id=data['vehicule_id']
+    )
+    db.session.add(nouveau_trajet)
+    db.session.commit()
+    return jsonify({"message": "Trajet ajouté"}), 201
+
+# 3️⃣ Récupérer tous les véhicules
+@app.route('/vehicules', methods=['GET'])
+def get_vehicules():
+    vehicules = Vehicule.query.all()
+    return jsonify([
+        {"id": v.id, "immatriculation": v.immatriculation, "modele": v.modele}
+        for v in vehicules
+    ])
+
+# 4️⃣ Ajouter un véhicule
+@app.route('/vehicules', methods=['POST'])
+def add_vehicule():
+    data = request.get_json()
+    nouveau_vehicule = Vehicule(immatriculation=data['immatriculation'], modele=data['modele'])
+    db.session.add(nouveau_vehicule)
+    db.session.commit()
+    return jsonify({"message": "Véhicule ajouté"}), 201
+
+# 5️⃣ Récupérer tous les conducteurs
+@app.route('/conducteurs', methods=['GET'])
+def get_conducteurs():
+    conducteurs = Conducteur.query.all()
+    return jsonify([
+        {"id": c.id, "nom": c.nom, "numero_permis": c.numero_permis}
+        for c in conducteurs
+    ])
+
+# 6️⃣ Ajouter un conducteur
+@app.route('/conducteurs', methods=['POST'])
+def add_conducteur():
+    data = request.get_json()
+    nouveau_conducteur = Conducteur(nom=data['nom'], numero_permis=data['numero_permis'])
+    db.session.add(nouveau_conducteur)
+    db.session.commit()
+    return jsonify({"message": "Conducteur ajouté"}), 201
+
+# Démarrer l’application Flask
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')

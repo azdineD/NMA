@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Véhicules - NMA Transport</title>
+    <!-- Lien vers Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <h1 class="mb-4 text-center">🚛 Liste des Véhicules</h1>
+        <a href="/" class="btn btn-secondary mb-3">🏠 Retour à l'accueil</a>
+
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Immatriculation</th>
+                    <th>Modèle</th>
+                </tr>
+            </thead>
+            <tbody id="vehiculesTable">
+                <!-- Les véhicules seront affichés ici -->
+            </tbody>
+        </table>
+
+        <h2 class="mt-4">Ajouter un Véhicule</h2>
+        <div class="row">
+            <div class="col-md-5">
+                <input type="text" id="immatriculation" class="form-control" placeholder="Immatriculation">
+            </div>
+            <div class="col-md-5">
+                <input type="text" id="modele" class="form-control" placeholder="Modèle">
+            </div>
+        </div>
+        <button onclick="ajouterVehicule()" class="btn btn-primary mt-3">Ajouter</button>
+
+    </div>
+
+    <script>
+        async function chargerVehicules() {
+            try {
+                const response = await fetch("/api/vehicules");
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des véhicules");
+                }
+                const vehicules = await response.json();
+                const table = document.getElementById("vehiculesTable");
+                table.innerHTML = "";
+
+                vehicules.forEach(vehicule => {
+                    let row = `<tr>
+                        <td>${vehicule.id}</td>
+                        <td>${vehicule.immatriculation}</td>
+                        <td>${vehicule.modele}</td>
+                    </tr>`;
+                    table.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Erreur:", error);
+                alert("Impossible de charger les véhicules.");
+            }
+        }
+
+        async function ajouterVehicule() {
+            const immatriculation = document.getElementById("immatriculation").value;
+            const modele = document.getElementById("modele").value;
+
+            const response = await fetch("/api/vehicules", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ immatriculation, modele })
+            });
+
+            if (response.ok) {
+                alert("Véhicule ajouté !");
+                chargerVehicules();
+            } else {
+                alert("Erreur lors de l'ajout !");
+            }
+        }
+
+        chargerVehicules();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conducteurs - NMA Transport</title>
+    <!-- Lien vers Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <h1 class="mb-4 text-center">👨‍✈️ Liste des Conducteurs</h1>
+        <a href="/" class="btn btn-secondary mb-3">🏠 Retour à l'accueil</a>
+
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Numéro de Permis</th>
+                </tr>
+            </thead>
+            <tbody id="conducteursTable">
+                <!-- Les conducteurs seront affichés ici -->
+            </tbody>
+        </table>
+
+        <h2 class="mt-4">Ajouter un Conducteur</h2>
+        <div class="row">
+            <div class="col-md-5">
+                <input type="text" id="nom" class="form-control" placeholder="Nom">
+            </div>
+            <div class="col-md-5">
+                <input type="text" id="numero_permis" class="form-control" placeholder="Numéro de Permis">
+            </div>
+        </div>
+        <button onclick="ajouterConducteur()" class="btn btn-primary mt-3">Ajouter</button>
+
+    </div>
+
+    <script>
+        async function chargerConducteurs() {
+            try {
+                const response = await fetch("/api/conducteurs");
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des conducteurs");
+                }
+                const conducteurs = await response.json();
+                const table = document.getElementById("conducteursTable");
+                table.innerHTML = "";
+
+                conducteurs.forEach(conducteur => {
+                    let row = `<tr>
+                        <td>${conducteur.id}</td>
+                        <td>${conducteur.nom}</td>
+                        <td>${conducteur.numero_permis}</td>
+                    </tr>`;
+                    table.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Erreur:", error);
+                alert("Impossible de charger les conducteurs.");
+            }
+        }
+
+        async function ajouterConducteur() {
+            const nom = document.getElementById("nom").value;
+            const numero_permis = document.getElementById("numero_permis").value;
+
+            const response = await fetch("/api/conducteurs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom, numero_permis })
+            });
+
+            if (response.ok) {
+                alert("Conducteur ajouté !");
+                chargerConducteurs();
+            } else {
+                alert("Erreur lors de l'ajout !");
+            }
+        }
+
+        chargerConducteurs();
+    </script>
+
+</body>
+</html>

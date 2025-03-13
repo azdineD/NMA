@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trajets - NMA Transport</title>
+    <!-- Lien vers Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <h1 class="mb-4 text-center">🚗 Liste des Trajets</h1>
+        <a href="/" class="btn btn-secondary mb-3">🏠 Retour à l'accueil</a>
+
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Départ</th>
+                    <th>Destination</th>
+                    <th>Date</th>
+		    <th>Conducteur</th>
+            	    <th>Véhicule</th>
+                    <th>Actions</th>
+                    </tr>
+            </thead>
+            <tbody id="trajetsTable">
+                <!-- Les trajets seront affichés ici -->
+            </tbody>
+        </table>
+
+        <h2 class="mt-4">Ajouter un Trajet</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <input type="text" id="depart" class="form-control" placeholder="Point de départ">
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="destination" class="form-control" placeholder="Destination">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateTrajet" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="number" id="conducteurId" class="form-control" placeholder="ID Conducteur">
+            </div>
+            <div class="col-md-2">
+                <input type="number" id="vehiculeId" class="form-control" placeholder="ID Véhicule">
+            </div>
+        </div>
+        <button onclick="ajouterTrajet()" class="btn btn-primary mt-3">Ajouter</button>
+
+    </div>
+<script>
+    async function ajouterTrajet() {
+        const depart = document.getElementById("depart").value.trim();
+        const destination = document.getElementById("destination").value.trim();
+        const dateTrajet = document.getElementById("dateTrajet").value;
+        const conducteurId = document.getElementById("conducteurId").value.trim();
+        const vehiculeId = document.getElementById("vehiculeId").value.trim();
+
+        if (!depart || !destination || !dateTrajet || !conducteurId || !vehiculeId) {
+            alert("Tous les champs doivent être remplis !");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/trajets", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    point_depart: depart,
+                    destination: destination,
+                    date_trajet: dateTrajet,
+                    conducteur_id: parseInt(conducteurId),
+                    vehicule_id: parseInt(vehiculeId)
+                })
+            });
+
+            if (response.ok) {
+                alert("Trajet ajouté avec succès !");
+                chargerTrajets(); // Rafraîchir la liste
+            } else {
+                const errorData = await response.json();
+                alert("Erreur : " + (errorData.error || "Impossible d'ajouter le trajet"));
+            }
+        } catch (error) {
+            console.error("Erreur :", error);
+            alert("Erreur réseau !");
+        }
+    }
+</script>
+
+    <script>
+        async function chargerTrajets() {
+            try {
+                const response = await fetch("/api/trajets");
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des trajets");
+                }
+                const trajets = await response.json();
+                const table = document.getElementById("trajetsTable");
+                table.innerHTML = "";
+
+                trajets.forEach(trajet => {
+                    let row = `<tr>
+                        <td>${trajet.id}</td>
+                        <td>${trajet.point_depart}</td>
+                        <td>${trajet.destination}</td>
+                        <td>${trajet.date_trajet}</td>
+			<td>${trajet.conducteur}</td>
+                        <td>${trajet.vehicule}</td>
+			<td>
+                        <button class="btn btn-danger btn-sm" onclick="supprimerTrajet(${trajet.id})">❌ Supprimer</button>
+                        <button class="btn btn-warning btn-sm" onclick="modifierTrajet(${trajet.id})">✏️ Modifier</button>
+                    	</td>
+                </tr>`;
+                table.innerHTML += row;
+            });
+        } catch (error) {
+            console.error("Erreur:", error);
+            alert("Impossible de charger les trajets.");
+        }
+    }
+
+    chargerTrajets();
+</script>
+<script>
+    async function supprimerTrajet(id) {
+        if (confirm("Voulez-vous vraiment supprimer ce trajet ?")) {
+            const response = await fetch(`/api/trajets/${id}`, {
+                method: "DELETE"
+            });
+
+            if (response.ok) {
+                alert("Trajet supprimé !");
+                chargerTrajets(); // Rafraîchir la liste
+            } else {
+                alert("Erreur lors de la suppression !");
+            }
+        }
+    }
+</script>
+<script>
+    async function modifierTrajet(id) {
+        const nouveauDepart = prompt("Nouveau point de départ :");
+        const nouvelleDestination = prompt("Nouvelle destination :");
+        const nouvelleDate = prompt("Nouvelle date (YYYY-MM-DD) :");
+        const nouveauConducteur = prompt("Nouvel ID conducteur :");
+        const nouveauVehicule = prompt("Nouvel ID véhicule :");
+
+        if (nouveauDepart && nouvelleDestination && nouvelleDate && nouveauConducteur && nouveauVehicule) {
+            const response = await fetch(`/api/trajets/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    point_depart: nouveauDepart,
+                    destination: nouvelleDestination,
+                    date_trajet: nouvelleDate,
+                    conducteur_id: parseInt(nouveauConducteur),
+                    vehicule_id: parseInt(nouveauVehicule)
+                })
+            });
+
+            if (response.ok) {
+                alert("Trajet modifié !");
+                chargerTrajets();
+            } else {
+                alert("Erreur lors de la modification !");
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

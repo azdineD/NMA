@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Trajets</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 10px; }
+        th { background-color: #f4f4f4; }
+        input, button { margin: 10px; padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Liste des Trajets</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Départ</th>
+                <th>Destination</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="trajetsTable">
+            <!-- Les trajets seront affichés ici -->
+        </tbody>
+    </table>
+
+    <h2>Ajouter un Trajet</h2>
+    <input type="text" id="depart" placeholder="Point de départ">
+    <input type="text" id="destination" placeholder="Destination">
+    <input type="date" id="dateTrajet">
+    <input type="number" id="conducteurId" placeholder="ID Conducteur">
+    <input type="number" id="vehiculeId" placeholder="ID Véhicule">
+    <button onclick="ajouterTrajet()">Ajouter</button>
+
+    <script>
+        async function chargerTrajets() {
+            const response = await fetch("http://127.0.0.1:5000/trajets");
+            const trajets = await response.json();
+            const table = document.getElementById("trajetsTable");
+            table.innerHTML = "";
+            trajets.forEach(trajet => {
+                let row = `<tr>
+                    <td>${trajet.id}</td>
+                    <td>${trajet.point_depart}</td>
+                    <td>${trajet.destination}</td>
+                    <td>${trajet.date_trajet}</td>
+                </tr>`;
+                table.innerHTML += row;
+            });
+        }
+
+        async function ajouterTrajet() {
+            const depart = document.getElementById("depart").value;
+            const destination = document.getElementById("destination").value;
+            const dateTrajet = document.getElementById("dateTrajet").value;
+            const conducteurId = document.getElementById("conducteurId").value;
+            const vehiculeId = document.getElementById("vehiculeId").value;
+
+            const response = await fetch("http://127.0.0.1:5000/trajets", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    point_depart: depart,
+                    destination: destination,
+                    date_trajet: dateTrajet,
+                    conducteur_id: parseInt(conducteurId),
+                    vehicule_id: parseInt(vehiculeId)
+                })
+            });
+
+            if (response.ok) {
+                alert("Trajet ajouté !");
+                chargerTrajets(); // Rafraîchir la liste des trajets
+            } else {
+                alert("Erreur lors de l'ajout !");
+            }
+        }
+
+        chargerTrajets(); // Charger les trajets au démarrage
+    </script>
+
+</body>
+</html>
