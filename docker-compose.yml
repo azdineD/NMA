@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres-nma
+    restart: always
+    environment:
+      POSTGRES_USER: nmauser
+      POSTGRES_PASSWORD: nmapassword
+      POSTGRES_DB: nma_transport
+    networks:
+      - nma-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Volume Docker dédié
+  flask-app:
+    build: .
+    container_name: nma-app
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://nmauser:nmapassword@postgres:5432/nma_transport"
+    ports:
+      - "5000:5000"
+    networks:
+      - nma-network
+
+networks:
+  nma-network:
+volumes:
+  postgres_data:
