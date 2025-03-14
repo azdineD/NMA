@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: nmauser
+      POSTGRES_PASSWORD: nmapassword
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    deploy:
+      placement:
+        constraints: [node.role == manager]  # PostgreSQL reste sur 192.168.1.82
+
+  flask-app:
+    image: lina2015/flask-app
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://nmauser:nmapassword@db:5432"
+    networks:
+      - app-network
+    ports:
+      - "5000:5000"
+
+networks:
+  app-network:
+    driver: overlay  # Réseau Swarm partagé entre 192.168.1.82 et 192.168.1.53
+
+volumes:
+  db-data:
+    driver: local
